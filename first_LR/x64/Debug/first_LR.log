@@ -1,0 +1,3 @@
+﻿  first_LR.cpp
+C:\Rand_tasks\first_LR\first_LR.cpp(50,27): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+  first_LR.vcxproj -> C:\Rand_tasks\x64\Debug\first_LR.exe
