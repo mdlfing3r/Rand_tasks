@@ -6,205 +6,144 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <map>
+#include <mutex>
 
 
 #define File_addr "./tasks.txt"
-#define min_value 0;
-#define max_value 10;
 
-#define min_value_of_duration 0;
-#define max_value_of_duration 0;
+#define min_value_of_duration 1;
+#define max_value_of_duration 5;
 
-#define Employes_amount 20;
-#define Daily_time_limit 24;
+#define min_value_of_name_pos 2;
+#define max_value_of_name_pos 20;
 
-//title - формируется на основании "задача" + <0..n>;   n - количество задач(вершин графа)
-//id - формируется рандомом 
- 
+#define min_value_of_connected_task 0;
+#define max_value_of_connected_task 2;
+#define Employes_amount (20);
+#define Daily_time_limit (24*60);
+
+
 class task {
 public:
-    task(uint16_t id, std::string title, uint16_t task_duration, std::vector<std::string>another_connected_task)
+    task(uint16_t id, std::string title, uint16_t task_duration, std::string nextTask)
         :
         _id(id) //id потока
-        ,_title(title)  //имя задачи
+        , _title(title)  //имя задачи
         , _task_duration(task_duration)   //продолжительность задачи
-        , _another_connected_task(another_connected_task)  //все задачи которые связаны с этой
+        , _nextTask(nextTask)  //все задачи которые связаны с этой
     {
         
-        std::cout << "Thread_id: " << std::this_thread::get_id() << " ||| title:" << title << " ||| task_duration: " << task_duration
-            << "||| list_of_connected_tasks:" << title << " " <<
-            std::string{ [](std::vector<std::string> input_vec) {
-                    std::string _retval;
-                    for (auto& it : input_vec) 
-                        _retval += "->" + it;
-                    return _retval;
-                }(another_connected_task) };
+        std::cout << title << ((nextTask!="") ? "->" + nextTask : " ") << std::endl;
+            
     }
 
 private:
     uint16_t _id;
     std::string _title;
     uint16_t _task_duration;
-    std::vector<std::string>_another_connected_task;
+    std::string _nextTask;
 };
 
-void distrib_func(std::vector<int>input_vec) {
-    std::cout << "Distribution function\n";
-    int in_process = 10;
-    int input_vec_counter = input_vec.size();
-    int digit_counter[10] = {};
-    for (auto it = 0; it < input_vec.size() - 1; it++) {
-        switch (input_vec.at(it)) {
-            case 0:
-                digit_counter[0]++;
-                break;
-            case 1:
-                digit_counter[1]++;
-                break;
-            case 2:
-                digit_counter[2]++;
-                break;
-            case 3:
-                digit_counter[3]++;
-                break;
-            case 4:
-                digit_counter[4]++;
-                break;
-            case 5:
-                digit_counter[5]++;
-                break;
-            case 6:
-                digit_counter[6]++;
-                break;
-            case 7:
-                digit_counter[7]++;
-                break;
-            case 8:
-                digit_counter[8]++;
-                break;
-            case 9:
-                digit_counter[9]++;
-                break;
-        }
-    }
-    std::cout << "0 1 2 3 4 5 6 7 8 9\n";
-    while (input_vec_counter) {
-        for (auto it = 0; it < 10; it++) {
-            if (input_vec_counter <= 0)
-                break;
-            if (digit_counter[it]) {
-                std::cout << "+ ";
-                input_vec_counter--;
-            }
-            else
-                std::cout << "  ";
-        }
-        std::cout << std::endl;
+//task_duration, nextTask
+typedef struct task_values {
+    uint16_t _task_duration;
+    std::string _nextTask;
+} task_values_type;
 
-    }
-}
-
-
-void ditrib_graphics(std::vector<int>input_vec) {
-    std::cout << "Distribution graph\n";
-    for (auto it = 0; it < input_vec.size() - 1; it++) {
-        switch (input_vec.at(it)) {
-        case 0:
-            std::cout << "+         " << std::endl;
-            std::cout << "+         " << std::endl;
-
-            break;
-        case 1:
-            std::cout << " +        " << std::endl;
-            std::cout << " +        " << std::endl;
-
-            break;
-        case 2:
-            std::cout << "  +       " << std::endl;
-            std::cout << "  +       " << std::endl;
-
-            break;
-        case 3:
-            std::cout << "   +      " << std::endl;
-            std::cout << "   +      " << std::endl;
-
-            break;
-        case 4:
-            std::cout << "    +     " << std::endl;
-            std::cout << "    +     " << std::endl;
-
-            break;
-        case 5:
-            std::cout << "     +    " << std::endl;
-            std::cout << "     +    " << std::endl;
-
-            break;
-        case 6:
-            std::cout << "      +   " << std::endl;
-            std::cout << "      +   " << std::endl;
-
-            break;
-        case 7:
-            std::cout << "       +  " << std::endl;
-            std::cout << "       +  " << std::endl;
-
-            break;
-        case 8:
-            std::cout << "        + " << std::endl;
-            std::cout << "        + " << std::endl;
-
-            break;
-        case 9:
-            std::cout << "         +" << std::endl;
-            std::cout << "         +" << std::endl;
-
-            break;
-        }
-        //Sleep(1);
-    }
-}
 
 std::string GetRandName(int string_num) {
     std::ifstream Names_Container(File_addr);
-    char* ptr;
+    char* p_symb;
     char symb;
-    ptr = &symb;
+    p_symb = &symb;
 
     std::string RandName;
 
-    Names_Container.get(symb);
+    Names_Container.get(*p_symb);
     do {
         string_num--;
-        //Names_Container.seekg(0, std::ios_base::cur);
-        Names_Container.get(*ptr);
+        Names_Container.get(*p_symb);
         getline(Names_Container, RandName);
     } while (string_num > 0);
-    return *ptr + RandName;
+    return *p_symb + RandName;
 }
 
-void thread_func() {
-    std::ostringstream oss;
-    int local_min = min_value;
-    int local_max = max_value;
-    std::vector<std::string>connected_tasks;
-
-    std::random_device r_dev;
-    std::default_random_engine r_eng_name(r_dev());
-    std::default_random_engine r_eng_dur(r_dev());
-    std::default_random_engine r_eng_con_amount(r_dev());
-    std::default_random_engine r_eng_con_task(r_dev());
-
-    std::uniform_int_distribution<int> uniform_dist(local_min, local_max);
-    std::uniform_int_distribution<int> uniform_dist_tasks(local_min, 100);
 
 
-    int connected_task_amount = uniform_dist(r_eng_con_amount); //0...10
+std::mutex mtx;
+void threadFunction() {
+        int _DailyLimit = (int)Daily_time_limit;
+        int min_val_dur = min_value_of_duration;
+        int max_val_dur = max_value_of_duration;
+        int min_val_NamePos = min_value_of_name_pos;
+        int max_val_NamePos = max_value_of_name_pos;
+        int min_val_DependsTaskAmount = min_value_of_connected_task;
+        int max_val_DependsTaskAmount = max_value_of_connected_task;
 
-    for (auto it = 0; it < connected_task_amount; it++) {
-        connected_tasks.push_back(GetRandName(uniform_dist_tasks(r_eng_con_task)));
-    }
-    oss << std::this_thread::get_id();
-    new task(std::stoi(oss.str()), GetRandName(uniform_dist_tasks(r_eng_name)), uniform_dist(r_eng_dur), connected_tasks);
+        std::uniform_int_distribution<int> uniform_dist_dur(min_val_dur, max_val_dur)
+            , uniform_dist_task(min_val_NamePos, max_val_NamePos)
+            , uniform_dist_task_amount(min_val_DependsTaskAmount, max_val_DependsTaskAmount);
+
+        std::string depends_task;
+        std::random_device r_dev;
+        std::default_random_engine  r_eng_name(r_dev())
+                                  , r_eng_dur(r_dev())
+                                  , r_eng_dep_task_amount(r_dev())
+                                  , r_eng_dep_task(r_dev());
+
+
+        std::map<std::string, task_values_type> Tasks_base;
+        task_values_type Tasks{ 0, "" };
+        std::ostringstream oss;
+        oss << std::this_thread::get_id();
+
+        uint16_t final_time = 0;
+
+
+
+        for (auto itrtr = 0; itrtr < max_val_NamePos; itrtr++) {
+
+            std::string temp_TaskName = GetRandName(uniform_dist_task(r_eng_name));
+
+            if (Tasks_base.find(temp_TaskName) == Tasks_base.end())
+                Tasks_base.emplace(temp_TaskName, Tasks); //если задачи нет в контейнере задач Tasks_base
+
+
+            if (*&Tasks_base.at(temp_TaskName)._nextTask == "" && *&Tasks_base.at(temp_TaskName)._task_duration == 0) {       //если следующая задача не существует 
+
+                while (max_val_NamePos > 0)
+                {
+                    depends_task = GetRandName(uniform_dist_task(r_eng_name));
+                    if (Tasks_base.find(depends_task) == Tasks_base.end() && depends_task != temp_TaskName) {
+                        *&depends_task = depends_task;
+                        break;
+                    }
+                    max_val_NamePos--;
+                }
+
+
+                task_values_type newTempDepensTask = { uniform_dist_dur(r_eng_dur), "" };
+
+                Tasks_base.emplace(*&depends_task, newTempDepensTask); //добавляем в контейнер задач подзадачу текущей задачи
+                *&Tasks_base.at(temp_TaskName)._nextTask = *&depends_task;
+                *&Tasks_base.at(temp_TaskName)._task_duration = uniform_dist_dur(r_eng_dur);
+            }
+
+        }
+        std::map<std::string, task_values_type> Tasks_base_sorted;
+
+
+
+        for (auto& it : Tasks_base) {
+
+            new task(std::stoi(oss.str()), it.first, it.second._task_duration, it.second._nextTask);
+            *&final_time += it.second._task_duration;
+
+        }
+
+        std::cout << "thread_ID: " << std::stoi(oss.str()) << " total Time : " << final_time << std::endl<<std::endl;
+        oss.clear();
 }
 
 
@@ -212,37 +151,26 @@ void thread_func() {
 
 int main()
 {
-    std::random_device r;
-    std::vector<int>digit_vec;
-
-    int _Employes_amount = Employes_amount;
-    int _Daily_time_limit = Daily_time_limit;
-
-    std::ifstream Names_Container(File_addr);
-
-    std::default_random_engine e1(r());
-    std::default_random_engine e2(r());
-    std::default_random_engine e3(r());
-    std::default_random_engine e4(r());
-
-   /*
-    for (auto it = 0; it < 300; it++) {
-        std::cout << "Randomly-chosen mean: " << uniform_dist(e1) << '\n';
-        digit_vec.push_back(uniform_dist(e1));
-    }
-    if (Names_Container.is_open())
-        std::cout << "File_is_open";
-    else
-        std::cout << "File_isn`t_open";
-    */
-    int _symb_offset = 0;
-
-   // Names_Container.seekg(5, std::ios_base::cur);
+    int Empl_cntr = Employes_amount;
 
 
-    //distrib_func(digit_vec);
-    //ditrib_graphics(digit_vec);
-    thread_func();
+    std::thread t1(threadFunction);
+    std::thread t2(threadFunction);
+    std::thread t3(threadFunction);
+    std::thread t4(threadFunction);
+    std::thread t5(threadFunction);
+    std::thread t6(threadFunction);
+    std::thread t7(threadFunction);
 
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
+    t6.join();
+    t7.join();
+
+
+    getchar();
     return 0;
 }
